@@ -1,0 +1,5 @@
+settings.py
+output.log
+tweetnom.db
+cache/
+*.pyc
