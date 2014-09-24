@@ -33,19 +33,16 @@ def fetch_url(tweetid, url):
 def process_status(tweet):
     conn.execute('INSERT OR IGNORE INTO tweets VALUES (?,?, ?,?)', (tweet.id, tweet.user.id, tweet.created_at, tweet.text))
     conn.commit()
-    urls = URLS_RE.findall(tweet.text)
+    urls = map(lambda x: x['expanded_url'], tweet.entities['urls'])
     for url in urls:
         fetch_url(tweet.id, url)
 
-URLS_RE = re.compile(r'(?P<url>https?://[^\s]+)')
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-v", "--verbose", help="more verbose", action="store_true")
-    parser.add_argument(
-        "-I", "--init", help="initial import", action="store_true")
     parser.add_argument(
         "-l", "--latest", help="list ten latest tweets", action="store_true")
     args = parser.parse_args()
@@ -72,15 +69,11 @@ if __name__ == '__main__':
     api = API(auth)
     tweets = None
 
-    if args.init:
-        for status in Cursor(api.user_timeline, 'dumpmon').items(10):
-            process_status(status)
-    else:
-        latest_tweet = conn.execute('SELECT id FROM tweets ORDER BY id desc').fetchone()
-        if latest_tweet:
-            logging.debug("[=] Latest TweetID: %s", latest_tweet)
-            tweets = api.user_timeline('dumpmon', since_id=latest_tweet[0])
-            logging.debug("[=] Tweets since last fetch: %s", len(tweets))
-            for tweet in tweets:
-                process_status(tweet)
+    latest_tweet = conn.execute('SELECT id FROM tweets ORDER BY id desc').fetchone()
+    if latest_tweet:
+        logging.debug("[=] Latest TweetID: %s", latest_tweet)
+        tweets = api.user_timeline('dumpmon', since_id=latest_tweet[0])
+        logging.debug("[=] Tweets since last fetch: %s", len(tweets))
+        for tweet in tweets:
+            process_status(tweet)
     conn.close()
