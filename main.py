@@ -1,14 +1,13 @@
 #-*- coding: utf-8 -*-
 from tweepy import OAuthHandler
 from tweepy import API
-from tweepy import Cursor
-import re
 import sqlite3
 import requests
 import shutil
 from settings import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET, log_file
 import logging
 import sys
+import argparse
 
 
 def fetch_url(tweetid, url):
@@ -26,7 +25,7 @@ def fetch_url(tweetid, url):
         logging.info('[=] URL is: %s', url)
     with open('cache/{}_{}.gz'.format(tweetid, source), 'wb') as out_file:
         shutil.copyfileobj(response.raw, out_file)
-        logging.info("[+] Stored paste from tweet: {} - Size: {}".format(tweetid, len(response.text)))
+        logging.info("[+] Stored paste from tweet: {} Read bytes: {}".format(tweetid, response.raw.tell()))
     del response
 
 
@@ -39,7 +38,6 @@ def process_status(tweet):
 
 
 if __name__ == '__main__':
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-v", "--verbose", help="more verbose", action="store_true")
